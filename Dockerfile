@@ -1,17 +1,18 @@
-FROM ubuntu:latest AS build
+# Etapa 1: Build da aplicação usando Maven
+FROM maven:3.9.6-eclipse-temurin-21 AS build
 
-RUN apt-get update
-RUN apt-get install openjdk-21.0.7-jdk -y
-
+WORKDIR /app
 COPY . .
 
-RUN apt-get install maven -y
-RUN mvn clean install
+RUN mvn clean package -DskipTests
 
-FROM openjdk:21.0.7-slim
+# Etapa 2: Imagem final com JDK mais leve
+FROM eclipse-temurin:21-jdk-alpine
+
+WORKDIR /app
+COPY --from=build /app/target/hello-spring-0.0.1-SNAPSHOT.jar app.jar
 
 EXPOSE 8080
 
-COPY --from=build /target/hello-spring-0.0.1-SNAPSHOT.jar app.jar
-
-ENTRYPOINT [ "java", "-jar", "app.jar"]
+# Inicia a aplicação
+ENTRYPOINT ["java", "-jar", "app.jar"]
